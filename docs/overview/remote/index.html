@@ -51,7 +51,7 @@
 <span class="hljs-comment">//     value = Primitive(value = 1, standardType = int),</span>
 <span class="hljs-comment">//     schemaA = Primitive(standardType = int, annotations = IndexedSeq())</span>
 <span class="hljs-comment">//   ),</span>
-<span class="hljs-comment">//   numeric = zio.flow.remote.Numeric$NumericInt$@378ee8a3</span>
+<span class="hljs-comment">//   numeric = zio.flow.remote.Numeric$NumericInt$@a59b20c</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
 <p>We see here that we can use the <code>apply</code> constructor on <code>Remote</code> to lift any existing value into a remote value as long as there is a <code>Schema</code> for it. We'll talk more about schemas below but you can think of a <code>Schema</code> as describing the &quot;structure&quot; of some Scala type as a value, allowing us to safely serialize it and deserialize it, among other things.</p>
@@ -76,32 +76,32 @@
 <span class="hljs-comment">//   ),</span>
 <span class="hljs-comment">//   ifError = EvaluatedRemoteFunction(</span>
 <span class="hljs-comment">//     input = Variable(</span>
-<span class="hljs-comment">//       identifier = "fresh_68e0b8ba-6a2d-4a87-9e22-b15239fbdd3f",</span>
+<span class="hljs-comment">//       identifier = "fresh_a94d2391-c4ed-491d-be58-a8780be8f298",</span>
 <span class="hljs-comment">//       schemaA = Transform(</span>
 <span class="hljs-comment">//         codec = Primitive(standardType = unit, annotations = IndexedSeq()),</span>
-<span class="hljs-comment">//         f = zio.flow.SchemaOrNothing$$anon$2$$Lambda$12674/68144013@e5b7ee,</span>
-<span class="hljs-comment">//         g = zio.flow.SchemaOrNothing$$anon$2$$Lambda$12675/1899333416@6192601,</span>
+<span class="hljs-comment">//         f = zio.flow.Schemas$$Lambda$12642/23130577@59dc6f5c,</span>
+<span class="hljs-comment">//         g = zio.flow.Schemas$$Lambda$12643/1302508364@5958c350,</span>
 <span class="hljs-comment">//         annotations = IndexedSeq(),</span>
 <span class="hljs-comment">//         identity = SourceLocation(</span>
 <span class="hljs-comment">//           path = "/home/runner/work/zio-flow/zio-flow/zio-flow/shared/src/main/scala/zio/flow/Schemas.scala",</span>
-<span class="hljs-comment">//           line = 34,</span>
-<span class="hljs-comment">//           col = 44</span>
+<span class="hljs-comment">//           line = 14,</span>
+<span class="hljs-comment">//           col = 43</span>
 <span class="hljs-comment">//         )</span>
 <span class="hljs-comment">//       )</span>
 <span class="hljs-comment">//     ),</span>
 <span class="hljs-comment">//     result = Flow(</span>
 <span class="hljs-comment">//       flow = Fail(</span>
 <span class="hljs-comment">//         error = Variable(</span>
-<span class="hljs-comment">//           identifier = "fresh_68e0b8ba-6a2d-4a87-9e22-b15239fbdd3f",</span>
+<span class="hljs-comment">//           identifier = "fresh_a94d2391-c4ed-491d-be58-a8780be8f298",</span>
 <span class="hljs-comment">//           schemaA = Transform(</span>
 <span class="hljs-comment">//             codec = Primitive(standardType = unit, annotations = IndexedSeq()),</span>
-<span class="hljs-comment">//             f = zio.flow.SchemaOrNothing$$anon$2$$Lambda$12674/68144013@e5b7ee,</span>
-<span class="hljs-comment">//             g = zio.flow.SchemaOrNothing$$anon$2$$Lambda$12675/1899333416@6192601,</span>
+<span class="hljs-comment">//             f = zio.flow.Schemas$$Lambda$12642/23130577@59dc6f5c,</span>
+<span class="hljs-comment">//             g = zio.flow.Schemas$$Lambda$12643/1302508364@5958c350,</span>
 <span class="hljs-comment">//             annotations = IndexedSeq(),</span>
 <span class="hljs-comment">//             identity = SourceLocation(</span>
 <span class="hljs-comment">//               path = "/home/runner/work/zio-flow/zio-flow/zio-flow/shared/src/main/scala/zio/flow/Schemas.scala",</span>
-<span class="hljs-comment">//               line = 34,</span>
-<span class="hljs-comment">//               col = 44</span>
+<span class="hljs-comment">//               line = 14,</span>
+<span class="hljs-comment">//               col = 43</span>
 <span class="hljs-comment">//             )</span>
 <span class="hljs-comment">//           )</span>
 <span class="hljs-comment">//         )</span>
@@ -110,9 +110,10 @@
 <span class="hljs-comment">//   ),</span>
 <span class="hljs-comment">//   ifSuccess = EvaluatedRemoteFunction(</span>
 <span class="hljs-comment">//     input = Variable(</span>
-<span class="hljs-comment">//       identifier = "fresh_be2e0da2-3b2b-43a1-97af-575cce129497",</span>
+<span class="hljs-comment">//       identifier = "fresh_68115c81-9c71-48fa-9225-405155078514",</span>
 <span class="hljs-comment">//       schemaA = Primitive(standardType = int, annotations = IndexedSeq())</span>
 <span class="hljs-comment">//     ),</span>
+<span class="hljs-comment">//     result = Flow(</span>
 <span class="hljs-comment">// ...</span>
 </code></pre>
 <p>Notice that here the function we provided to <code>ZFlow#map</code> looked identical to the one we would provide to <code>ZIO#map</code> in a <code>ZIO</code> application. This is exactly the interface we want and lets use &quot;forget&quot; in most cases that we are working with the world of <code>Remote</code> values instead of the world of normal values.</p>
