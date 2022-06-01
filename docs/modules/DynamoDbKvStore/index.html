@@ -16,22 +16,41 @@ dynamodb.create_table (
     TableName = <span class="hljs-string">'_zflow_key_value_store'</span>,
     AttributeDefinitions = [
          {
-             <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_namespace'</span>,
-             <span class="hljs-string">'AttributeType'</span>: <span class="hljs-string">'S'</span>
-         },
-         {
              <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_key'</span>,
              <span class="hljs-string">'AttributeType'</span>: <span class="hljs-string">'B'</span>
+         },
+         {
+             <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_timestamp'</span>,
+             <span class="hljs-string">'AttributeType'</span>: <span class="hljs-string">'N'</span>
          }
     ],    
     KeySchema = [
         {
-            <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_namespace'</span>,
+            <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_key'</span>,
             <span class="hljs-string">'KeyType'</span>: <span class="hljs-string">'HASH'</span>
         },
         {
-            <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_key'</span>,
+            <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_timestamp'</span>,
             <span class="hljs-string">'KeyType'</span>: <span class="hljs-string">'RANGE'</span>
+        }
+    ],
+    GlobalSecondaryIndexes = [
+        {
+            <span class="hljs-string">'IndexName'</span>: <span class="hljs-string">'namespace_index'</span>,
+            <span class="hljs-string">'KeySchema'</span>: [
+                {
+                    <span class="hljs-string">'AttributeName'</span>: <span class="hljs-string">'zflow_kv_namespace'</span>,
+                    <span class="hljs-string">'KeyType'</span>: <span class="hljs-string">'HASH'</span>
+                }
+            ],
+            <span class="hljs-string">'Projection'</span>: {
+                <span class="hljs-string">'NonKeyAttributes'</span>: [<span class="hljs-string">'zflow_kv_value'</span>],
+                <span class="hljs-string">'ProjectionType'</span>: <span class="hljs-string">'INCLUDE'</span>
+            },
+            <span class="hljs-string">'ProvisionedThroughput'</span> = {
+                <span class="hljs-string">'ReadCapacityUnits'</span>: <span class="hljs-number">1</span>,
+                <span class="hljs-string">'WriteCapacityUnits'</span>: <span class="hljs-number">1</span>
+            }
         }
     ],
     ProvisionedThroughput = {
@@ -42,5 +61,7 @@ dynamodb.create_table (
 </code></pre>
 <p>Of course, you can use your favourite AWS tool to create the table (e.g. DynamoDB Console) or to automate the creation (e.g. via CloudFormation). You should customize the <code>ProvisionedThroughput</code> settings when the table is provisioned.</p>
 <h1><a class="anchor" aria-hidden="true" id="performancescaling-considerations"></a><a href="#performancescaling-considerations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Performance/Scaling Considerations:</h1>
-<p>As you can see from the script above, the primary key is composed of the two columns, <code>zflow_kv_namespace</code> and <code>zflow_kv_key</code>. In particular, <code>zflow_kv_namespace</code> is the partition key and <code>zflow_kv_key</code> is the sort key. Data will be partitioned by the hash values of the <code>zflow_kv_namespace</code> column. If one small set of namespace values are the majority for all possible values, that will create data skew and can have a big impact to your cluster down the road. Some consideration is needed when deciding the type of values <code>zflow_kv_namespace</code> should store.</p>
+<p>As you can see from the script above, the primary key is composed of the two columns, <code>zflow_kv_key</code> and <code>zflow_kv_timestamp</code>. In particular, <code>zflow_kv_key</code> is the partition key and <code>zflow_kv_timestamp</code> is the sort key. Internally, zio-flow will store the namespace as part of the <code>zflow_kv_key</code> value as well, but it will also
+store it in the <code>zflow_kv_namespace</code> attribute for easy access to all values within a namespace. This requires
+a secondary index to be set up on the <code>zflow_kv_namespace</code> attribute.</p>
 </span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-flow/" class="nav-home"><img src="/zio-flow/img/sidebar_brand2x.png" alt="zio-flow"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-flow" data-icon="octicon-star" data-count-href="/zio/zio-flow/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-flow//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-flow/api/index.html">Scaladoc of zio-flow</a></div></section><section class="copyright">Copyright © 2022 ZIO Maintainers</section></footer></div></body></html>
