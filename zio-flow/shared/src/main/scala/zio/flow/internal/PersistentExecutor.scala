@@ -402,11 +402,26 @@ final case class PersistentExecutor(
           } yield stepResult
 
         case fold @ Fold(_, _, _) =>
-          val cont =
+          val cont = {
             Instruction.Continuation[fold.ValueR, fold.ValueA, fold.ValueE, fold.ValueE2, fold.ValueB](
-              fold.ifError,
-              fold.ifSuccess
+              {
+                val nm: RemoteVariableName = ???
+                val sc: Schema[Any] = ???
+                val fl: Remote[ZFlow[fold.ValueR,fold.ValueE2,fold.ValueB]] = ???
+                val s: Remote.EvaluatedRemoteFunction[fold.ValueE,ZFlow[fold.ValueR,fold.ValueE2,fold.ValueB]] =
+                  EvaluatedRemoteFunction(Remote.Variable(nm, sc), fl)
+                fold.ifError.getOrElse(s)
+              },
+              {
+                val nm: RemoteVariableName = ???
+                val sc: Schema[Any] = ???
+                val fl: Remote[ZFlow[fold.ValueR,fold.ValueE2,fold.ValueB]] = ???
+                val e: Remote.EvaluatedRemoteFunction[fold.ValueA,ZFlow[fold.ValueR,fold.ValueE2,fold.ValueB]] =
+                  EvaluatedRemoteFunction(Remote.Variable(nm, sc), fl)
+                fold.ifSuccess.getOrElse(e)
+              }
             )
+          }
           ZIO.succeed(
             StepResult(
               StateChange.setCurrent(fold.value) ++
@@ -1082,7 +1097,7 @@ object PersistentExecutor {
           case Some(txState) =>
             val compensations = txState.compensations.foldLeft[ZFlow[Any, ActivityError, Unit]](ZFlow.unit)(_ *> _)
             val compensateAndFail: ZFlow[_, _, _] =
-              ZFlow.Fold(
+              ZFlow.Fold.fold(
                 compensations,
                 RemoteFunction((error: Remote[ActivityError]) =>
                   ZFlow.fail(error).asInstanceOf[ZFlow[Any, Any, Any]]
@@ -1101,7 +1116,7 @@ object PersistentExecutor {
           case Some(txState) =>
             val compensations = txState.compensations.foldLeft[ZFlow[Any, ActivityError, Unit]](ZFlow.unit)(_ *> _)
             val compensateAndRun: ZFlow[_, _, _] =
-              ZFlow.Fold(
+              ZFlow.Fold.fold(
                 compensations,
                 RemoteFunction((error: Remote[ActivityError]) =>
                   ZFlow.fail(error).asInstanceOf[ZFlow[Any, Any, Any]]

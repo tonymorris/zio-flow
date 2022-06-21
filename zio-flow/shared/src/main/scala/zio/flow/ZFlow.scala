@@ -85,7 +85,7 @@ sealed trait ZFlow[-R, +E, +A] {
     error: Remote[E] => ZFlow[R1, E2, B],
     success: Remote[A] => ZFlow[R1, E2, B]
   ): ZFlow[R1, E2, B] =
-    ZFlow.Fold(
+    ZFlow.Fold.fold(
       self,
       RemoteFunction(error.andThen(_.toRemote))(
         errorSchema.asInstanceOf[Schema[E]]
@@ -263,8 +263,8 @@ object ZFlow {
 
   final case class Fold[R, E, E2, A, B](
     value: ZFlow[R, E, A],
-    ifError: EvaluatedRemoteFunction[E, ZFlow[R, E2, B]],
-    ifSuccess: EvaluatedRemoteFunction[A, ZFlow[R, E2, B]]
+    ifError: Option[EvaluatedRemoteFunction[E, ZFlow[R, E2, B]]],
+    ifSuccess: Option[EvaluatedRemoteFunction[A, ZFlow[R, E2, B]]]
   )(implicit
     val errorSchema: Schema[E2],
     val resultSchema: Schema[B]
@@ -277,6 +277,16 @@ object ZFlow {
   }
 
   object Fold {
+    def fold[R, E, E2, A, B](
+      value: ZFlow[R, E, A],
+      ifError: EvaluatedRemoteFunction[E, ZFlow[R, E2, B]],
+      ifSuccess: EvaluatedRemoteFunction[A, ZFlow[R, E2, B]]
+    )(implicit
+        errorSchema: Schema[E2],
+        resultSchema: Schema[B]
+    ): Fold[R, E, E2, A, B] =
+      Fold(value, Some(ifError), Some(ifSuccess))
+
     def schema[R, E, E2, A, B]: Schema[Fold[R, E, E2, A, B]] =
       Schema.defer(
         Schema.CaseClass5[ZFlow[R, E, A], EvaluatedRemoteFunction[E, ZFlow[R, E2, B]], EvaluatedRemoteFunction[
@@ -289,14 +299,30 @@ object ZFlow {
           Schema.Field("errorSchema", FlowSchemaAst.schema),
           Schema.Field("resultSchema", FlowSchemaAst.schema),
           { case (value, ifError, ifSuccess, errorSchema, resultSchema) =>
-            Fold(value, ifError, ifSuccess)(
+            Fold.fold(value, ifError, ifSuccess)(
               errorSchema.toSchema[E2],
               resultSchema.toSchema[B]
             )
           },
           _.value,
-          _.ifError,
-          _.ifSuccess,
+          x => {
+            val fl: Remote[ZFlow[R,E2,B]] = ???
+            val nm: RemoteVariableName = ???
+            val sc: Schema[E] = ???
+            val s: EvaluatedRemoteFunction[E,ZFlow[R,E2,B]] =
+              EvaluatedRemoteFunction(Remote.Variable(nm, sc), fl)
+            val e: Option[EvaluatedRemoteFunction[E,ZFlow[R,E2,B]]] = x.ifError
+            e.getOrElse(s)
+          },
+          x => {
+            val fl: Remote[ZFlow[R,E2,B]] = ???
+            val nm: RemoteVariableName = ???
+            val sc: Schema[A] = ???
+            val s: EvaluatedRemoteFunction[A,ZFlow[R,E2,B]] =
+              EvaluatedRemoteFunction(Remote.Variable(nm, sc), fl)
+            val e: Option[EvaluatedRemoteFunction[A,ZFlow[R,E2,B]]] = x.ifSuccess
+            e.getOrElse(s)
+          },
           flow => FlowSchemaAst.fromSchema(flow.errorSchema),
           flow => FlowSchemaAst.fromSchema(flow.resultSchema)
         )
