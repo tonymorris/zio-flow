@@ -57,6 +57,12 @@ sealed trait Remote[+A] { self =>
   }
 
   final def unit: Remote[Unit] = Remote.Ignore()
+
+  def asString[A1 >: A](fn: Remote.EvaluatedRemoteFunction[A1, String]): Remote[String] =
+    Remote.RemoteToString(this, fn)
+
+  def asToString[A1 >: A: Schema]: Remote[String] =
+    Remote.RemoteToString(this, Remote.RemoteFunction[A1, String](a => Remote(a.toString)).evaluated)
 }
 
 object Remote {
@@ -2201,6 +2207,54 @@ object Remote {
       Schema.Case("FoldOption", schema, _.asInstanceOf[FoldOption[Any, A]])
   }
 
+  /*
+  final case class RemoteToString[A](value: Remote[A]) extends Remote[String] {
+    override val schema =
+      Schema[String]
+
+    override def evalDynamic: ZIO[RemoteContext, String, SchemaAndValue[String]] =
+      value.evalDynamic.flatMap {
+        schemaAndValue =>
+          ZIO.fromEither(schemaAndValue.toTyped).map {
+            case a =>
+              SchemaAndValue.fromSchemaAndValue(Schema[String], a.toString)
+          }
+      }
+  }
+
+  object RemoteToString {
+    def schema[A]: Schema[RemoteToString[A]] =
+      Schema.defer(Remote.schema[A].transform(RemoteToString(_), _.value))
+
+    def schemaCase[A]: Schema.Case[RemoteToString[A], Remote[A]] =
+      Schema.Case("RemoteToString", schema, _.asInstanceOf[RemoteToString[A]])
+  }
+*/
+  final case class RemoteToString[A](value: Remote[A], fn: EvaluatedRemoteFunction[A, String]) extends Remote[String] {
+    override val schema =
+      Schema[String]
+
+    override def evalDynamic: ZIO[RemoteContext, String, SchemaAndValue[String]] =
+      fn.apply(value).evalDynamic
+  }
+
+  object RemoteToString {
+    def schema[A]: Schema[RemoteToString[A]] = {
+      Schema.CaseClass2[Remote[A], EvaluatedRemoteFunction[A, String], RemoteToString[A]](
+        Schema.Field("value", Remote.schema),
+        Schema.Field("toStringFunction", EvaluatedRemoteFunction.schema),
+        (value, fn) => RemoteToString[A](value, fn),
+        _.value,
+        _.fn
+      )
+    }
+
+    def schemaCase[A]: Schema.Case[RemoteToString[A], Remote[A]] =
+      Schema.Case("RemoteToString", schema, _.asInstanceOf[RemoteToString[A]])
+  }
+
+
+
 //  final case class LensGet[S, A](whole: Remote[S], lens: RemoteLens[S, A]) extends Remote[A] {
 //    val schema: Schema[A] = SchemaOrNothing.fromSchema(lens.schemaPiece)
 //
@@ -2405,6 +2459,7 @@ object Remote {
       .:+:(Lazy.schemaCase[A])
       .:+:(RemoteSome.schemaCase[A])
       .:+:(FoldOption.schemaCase[A])
+      .:+:(RemoteToString.schemaCase[A])
   )
 
   implicit val schemaAny: Schema[Remote[Any]] = createSchema[Any]

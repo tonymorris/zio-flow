@@ -496,6 +496,11 @@ trait Generators extends DefaultJavaTimeSchemas {
       b <- genLiteral
     } yield Remote.FoldOption(Remote.RemoteSome(a), b, Remote.RemoteFunction((_: Remote[Int]) => b).evaluated)
 
+  lazy val genToString: Gen[Sized, Remote[Any]] =
+    for {
+      a <- genLiteral
+    } yield Remote.RemoteToString(a)
+
   lazy val genZFlowReturn: Gen[Sized, ZFlow.Return[Any]] =
     Gen
       .oneOf(
